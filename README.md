@@ -23,7 +23,7 @@ export function Checkout() {
   const { status, verify } = usePaymentVerification();
 
   return (
-    <StablePayProvider to="YOUR_WALLET">
+    <StablePayProvider to="YOUR_WALLET_ADDRESS">
       <StablePay
         amount={0.1}
         reference="order-123"
