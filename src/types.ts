@@ -1,10 +1,12 @@
 import type React from "react";
+import type { StableTokenConfig } from "./tokens";
 
 export type StablePaySuccessPayload<TMetadata = undefined> = {
   signature: string;
   amount: number;
   to: string;
   reference: string;
+  token: StableTokenConfig;
   metadata?: TMetadata;
 };
 
@@ -12,6 +14,7 @@ export type StablePayPayArgs<TMetadata = undefined> = {
   amount: number;
   to: string;
   reference: string;
+  token?: StableTokenConfig;
   metadata?: TMetadata;
   onSuccess?: (payload: StablePaySuccessPayload<TMetadata>) => void;
   onError?: (error: Error) => void;
@@ -27,6 +30,7 @@ export type StablePayProps<TMetadata = undefined> = {
   amount: number;
   to?: string;
   reference: string;
+  token?: StableTokenConfig;
   metadata?: TMetadata;
   disabled?: boolean;
   children: React.ReactElement<{
@@ -49,6 +53,7 @@ export type VerifyPaymentInput = {
   amount: string; // human-readable, e.g. "25.00"
   txHash: string;
   reference: string;
+  token?: StableTokenConfig;
 };
 
 export type VerifyPaymentResult =
@@ -83,5 +88,6 @@ export type ParsedPayment = {
   reference: string;
   rawReference: string;
   confirmations: number;
+  token: StableTokenConfig;
   timestamp?: number;
 };

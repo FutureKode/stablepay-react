@@ -1,11 +1,13 @@
 import { VerifyPaymentInput, VerifyPaymentResult } from "./types";
-import { parseUsdcPaymentFromTransaction } from "./parseUsdcPaymentFromTransaction";
-import { amountGte, getUsdcTokenAccountForWallet, sameAddress } from "./utils";
+import { parsePaymentFromTransaction } from "./parsePaymentFromTransaction";
+import { resolveStableTokenConfig } from "./tokens";
+import { amountGte, getTokenAccountForWallet, sameAddress } from "./utils";
 
 export async function verifyPayment(
   input: VerifyPaymentInput,
 ): Promise<VerifyPaymentResult> {
-  const parsed = await parseUsdcPaymentFromTransaction(input.txHash);
+  const token = resolveStableTokenConfig(input.token);
+  const parsed = await parsePaymentFromTransaction(input.txHash, token);
 
   if (!parsed) {
     return {
@@ -23,7 +25,7 @@ export async function verifyPayment(
     };
   }
 
-  const expectedTokenAccount = getUsdcTokenAccountForWallet(input.to);
+  const expectedTokenAccount = getTokenAccountForWallet(input.to, token);
 
   if (!sameAddress(parsed.to, expectedTokenAccount)) {
     return {
@@ -33,7 +35,7 @@ export async function verifyPayment(
     };
   }
 
-  if (!amountGte(parsed.amount, input.amount)) {
+  if (!amountGte(parsed.amount, input.amount, token)) {
     return {
       ok: false,
       reason: "AMOUNT_TOO_LOW",

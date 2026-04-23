@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { buildUsdcTransfer } from "../solana/buildUsdcTransfer";
+import { buildTokenTransfer } from "../solana/buildTokenTransfer";
+import { resolveStableTokenConfig } from "../tokens";
 import type { StablePayPayArgs, UseStablePayResult } from "../types";
 
 type PendingPayment<TMetadata> = StablePayPayArgs<TMetadata>;
@@ -20,7 +21,7 @@ export function useStablePay<TMetadata = undefined>(): UseStablePayResult<TMetad
   );
 
   const executePayment = useCallback(
-    async ({ amount, to, reference }: StablePayPayArgs<TMetadata>) => {
+    async ({ amount, to, reference, token }: StablePayPayArgs<TMetadata>) => {
       if (!publicKey) {
         throw new Error("Wallet not connected");
       }
@@ -33,12 +34,15 @@ export function useStablePay<TMetadata = undefined>(): UseStablePayResult<TMetad
         throw new Error("Invalid recipient wallet address");
       }
 
-      const transaction = await buildUsdcTransfer({
+      const resolvedToken = resolveStableTokenConfig(token);
+
+      const transaction = await buildTokenTransfer({
         connection,
         fromWallet: publicKey,
         toWallet: recipient,
         amount,
         reference,
+        token: resolvedToken,
       });
 
       const sig = await sendTransaction(transaction, connection);
@@ -55,6 +59,7 @@ export function useStablePay<TMetadata = undefined>(): UseStablePayResult<TMetad
       amount,
       to,
       reference,
+      token,
       metadata,
       onSuccess,
       onError,
@@ -69,6 +74,7 @@ export function useStablePay<TMetadata = undefined>(): UseStablePayResult<TMetad
           amount,
           to,
           reference,
+          token,
           metadata,
           onSuccess,
           onError,
@@ -78,12 +84,20 @@ export function useStablePay<TMetadata = undefined>(): UseStablePayResult<TMetad
       }
 
       try {
-        const sig = await executePayment({ amount, to, reference, metadata });
+        const resolvedToken = resolveStableTokenConfig(token);
+        const sig = await executePayment({
+          amount,
+          to,
+          reference,
+          token: resolvedToken,
+          metadata,
+        });
         onSuccess?.({
           signature: sig,
           amount,
           to,
           reference,
+          token: resolvedToken,
           metadata,
         });
         return sig;
@@ -118,6 +132,7 @@ export function useStablePay<TMetadata = undefined>(): UseStablePayResult<TMetad
             amount: payment.amount,
             to: payment.to,
             reference: payment.reference,
+            token: resolveStableTokenConfig(payment.token),
             metadata: payment.metadata,
           });
           setSignature(sig);

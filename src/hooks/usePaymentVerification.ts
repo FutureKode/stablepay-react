@@ -49,6 +49,7 @@ export function usePaymentVerification(
             amount: String(payload.amount),
             txHash: payload.signature,
             reference: payload.reference,
+            token: payload.token,
           },
           {
             maxAttempts: options.maxAttempts,
