@@ -25,8 +25,10 @@ export function StablePay<TMetadata = undefined>({
   to,
   reference,
   token,
+  createRecipientTokenAccount,
   metadata,
   children,
+  onEvent,
   onSuccess,
   onError,
 }: StablePayProps<TMetadata>) {
@@ -56,7 +58,9 @@ export function StablePay<TMetadata = undefined>({
         to: resolvedTo,
         reference,
         token,
+        createRecipientTokenAccount,
         metadata,
+        onEvent,
         onSuccess,
         onError,
       });
@@ -70,3 +74,5 @@ export function StablePay<TMetadata = undefined>({
     disabled: Boolean(children.props.disabled) || loading,
   });
 }
+
+export const StablePayButton = StablePay;

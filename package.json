@@ -1,7 +1,7 @@
 {
   "name": "@futurekode/stablepay-react",
-  "version": "0.9.0",
-  "description": "Headless React wrapper for USDC payments on Solana",
+  "version": "1.0.0",
+  "description": "Headless React SDK for stable token payments on Solana",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",

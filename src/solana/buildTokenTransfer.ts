@@ -2,13 +2,18 @@ import { Buffer } from "buffer";
 import {
   Connection,
   PublicKey,
+  SystemProgram,
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
 import { encodeStablePayReference } from "../reference";
 import { resolveStableTokenConfig, type StableTokenConfig } from "../tokens";
 import { toTokenBaseUnits } from "./amount";
-import { MEMO_PROGRAM_ID, TOKEN_PROGRAM_ID } from "./constants";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  MEMO_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+} from "./constants";
 import { getAssociatedTokenAddressSync } from "../utils";
 
 type BuildTokenTransferParams = {
@@ -18,6 +23,7 @@ type BuildTokenTransferParams = {
   amount: number;
   reference: string;
   token?: StableTokenConfig;
+  createRecipientTokenAccount?: boolean;
 };
 
 function createTransferCheckedInstruction(
@@ -45,6 +51,26 @@ function createTransferCheckedInstruction(
   });
 }
 
+function createAssociatedTokenAccountInstruction(
+  payer: PublicKey,
+  associatedToken: PublicKey,
+  owner: PublicKey,
+  mint: PublicKey,
+): TransactionInstruction {
+  return new TransactionInstruction({
+    programId: ASSOCIATED_TOKEN_PROGRAM_ID,
+    keys: [
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: associatedToken, isSigner: false, isWritable: true },
+      { pubkey: owner, isSigner: false, isWritable: false },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.alloc(0),
+  });
+}
+
 export async function buildTokenTransfer({
   connection,
   fromWallet,
@@ -52,6 +78,7 @@ export async function buildTokenTransfer({
   amount,
   reference,
   token,
+  createRecipientTokenAccount = false,
 }: BuildTokenTransferParams) {
   const resolvedToken = resolveStableTokenConfig(token);
   const mint = new PublicKey(resolvedToken.mint);
@@ -79,8 +106,14 @@ export async function buildTokenTransfer({
   }
 
   if (!toAtaInfo) {
-    throw new Error(
-      `Recipient wallet does not have a ${resolvedToken.symbol} token account yet.`,
+    if (!createRecipientTokenAccount) {
+      throw new Error(
+        `Recipient wallet does not have a ${resolvedToken.symbol} token account yet.`,
+      );
+    }
+
+    tx.add(
+      createAssociatedTokenAccountInstruction(fromWallet, toAta, toWallet, mint),
     );
   }
 
